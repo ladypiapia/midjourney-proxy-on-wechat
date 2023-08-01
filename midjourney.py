@@ -35,7 +35,7 @@ class MidJourney(Plugin):
             "mj_tip": True,
             "mj_admin_password": "",
             "discordapp_proxy": "",
-            "daily_limit": 3,
+            "daily_limit": 30,
             "imagine_prefix": [
                 "/i",
                 "/mj"
