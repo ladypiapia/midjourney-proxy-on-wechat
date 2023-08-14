@@ -22,7 +22,7 @@ from .ctext import *
     name="MidJourney",
     namecn="MJ绘画",
     desc="一款AI绘画工具",
-    version="1.0.44",
+    version="1.0.46",
     author="mouxan"
 )
 class MidJourney(Plugin):
@@ -60,13 +60,17 @@ class MidJourney(Plugin):
             ],
             "end_prefix": [
                 "/e"
-            ]
+            ],
+            "reroll_prefix": [
+                "/r"
+            ],
         }
 
         # 读取和写入配置文件
         curdir = os.path.dirname(__file__)
         self.json_path = os.path.join(curdir, "config.json")
-        self.roll_path = os.path.join(curdir, "user_datas.pkl")
+        self.roll_path = os.path.join(curdir, "user_info.pkl")
+        self.user_datas_path = os.path.join(curdir, "user_datas.pkl")
         tm_path = os.path.join(curdir, "config.json.template")
 
         env = {}
@@ -129,6 +133,10 @@ class MidJourney(Plugin):
         # 写入用户列表
         write_pickle(self.roll_path, self.roll)
 
+        self.user_datas = {}
+        if os.path.exists(self.user_datas_path):
+            self.user_datas = read_pickle(self.user_datas_path)
+
         # 目前没有设计session过期事件，这里先暂时使用过期字典
         if conf().get("expires_in_seconds"):
             self.sessions = ExpiredDict(conf().get("expires_in_seconds"))
@@ -172,10 +180,6 @@ class MidJourney(Plugin):
         if not self.userInfo["isadmin"] and self.userInfo["isbuser"]:
             return
 
-        # 非管理员，非白名单用户，使用次数已用完
-        if not self.userInfo["isadmin"] and not self.userInfo["iswuser"] and not self.userInfo["limit"]:
-            return Error("[MJ] 您今日的使用次数已用完，请明日再来", e_context)
-
         # 判断是否在运行中
         if not self.ismj:
             return
@@ -211,7 +215,7 @@ class MidJourney(Plugin):
             if self.sessionid in self.sessions:
                 self.sessions[self.sessionid].reset()
                 del self.sessions[self.sessionid]
-            return self.imagine(prompt, "", e_context)
+            return self.imagine(prompt, [], e_context)
         elif pn == "up_prefix":
             if not prompt:
                 return Info("[MJ] 请输入任务ID", e_context)
@@ -221,9 +225,9 @@ class MidJourney(Plugin):
             return self.up(prompt, e_context)
         elif pn == "pad_prefix":
             if not prompt:
-                return Info("[MJ] 请输入要绘制的描述文字", e_context)
+                return Info("[MJ] 请输入要绘制的描述文字进行开启垫图模式，然后发送一张或者多张图片", e_context)
             self.sessions[self.sessionid] = _imgCache(self.sessionid, "imagine", prompt)
-            return Text(f"✨ 垫图模式\n✏ 请再发送一张图片", e_context)
+            return Text(f"✨ 垫图模式\n✏ 请再发送一张或者多张图片", e_context)
         elif pn == "blend_prefix":
             self.sessions[self.sessionid] = _imgCache(self.sessionid, "blend", prompt)
             return Text(f"✨ 混图模式\n✏ 请发送两张或多张图片，然后输入['{self.config['end_prefix'][0]}']结束", e_context)
@@ -239,14 +243,20 @@ class MidJourney(Plugin):
                 return Error("[MJ] 请先输入指令开启绘图模式", e_context)
             base64Array = img_cache["base64Array"]
             prompt = img_cache["prompt"]
+            instruct = img_cache["instruct"]
             length = len(base64Array)
-            if length >= 2:
+            if instruct == 'imagine' and length < 1:
+                return Text(f"✨ 垫图模式\n✏ 请发送一张或多张图片方可完成垫图", e_context)
+            elif instruct == 'imagine' and length >= 1:
+                if self.sessionid in self.sessions:
+                    self.sessions[self.sessionid].reset()
+                    del self.sessions[self.sessionid]
+                return self.imagine(prompt, base64Array, e_context)
+            if instruct == "blend" and length >= 2:
                 if self.sessionid in self.sessions:
                     self.sessions[self.sessionid].reset()
                     del self.sessions[self.sessionid]
                 return self.blend(base64Array, prompt, e_context)
-            elif length == 0:
-                return Text(f"✨ 混图模式\n✏ 请发送两张或多张图片方可完成混图", e_context)
             else:
                 return Text(f"✨ 混图模式\n✏ 请再发送一张图片方可完成混图", e_context)
         elif pn == "fetch_prefix":
@@ -276,11 +286,13 @@ class MidJourney(Plugin):
                 self.sessions[self.sessionid].reset()
                 del self.sessions[self.sessionid]
             return send(rc, e_context, rt)
-        elif content.startswith("/re"):
+        elif pn == "reroll_prefix":
+            if not prompt:
+                return Info("[MJ] 请输入任务ID", e_context)
             if self.sessionid in self.sessions:
                 self.sessions[self.sessionid].reset()
                 del self.sessions[self.sessionid]
-            return self.reroll(content.replace("/re", "").strip(), e_context)
+            return self.reroll(prompt, e_context)
 
     # 识图
     def handle_image(self, e_context: EventContext):
@@ -306,33 +318,22 @@ class MidJourney(Plugin):
                 del self.sessions[self.sessionid]
             return self.describe(base64, e_context)
 
-        # 垫图模式
-        if img_cache and img_cache["instruct"] == "imagine":
+        # 垫图模式和混图模式
+        if img_cache and (img_cache["instruct"] == "imagine" or img_cache["instruct"] == "blend"):
             # 环境检测
             env = env_detection(self, e_context)
             if not env:
                 return
-            prompt = img_cache["prompt"]
-            if self.sessionid in self.sessions:
-                self.sessions[self.sessionid].reset()
-                del self.sessions[self.sessionid]
-            return self.imagine(prompt, base64, e_context)
-
-        # 混图模式
-        if img_cache and img_cache["instruct"] == "blend":
-            # 环境检测
-            env = env_detection(self, e_context)
-            if not env:
-                return
+            names = '垫图' if img_cache['instruct'] == 'imagine' else '混图'
             if self.sessionid not in self.sessions:
-                return Info("[MJ] 请先输入指令开启绘图模式", e_context)
+                return Info(f"[MJ] 请先输入指令开启{names}模式", e_context)
             self.sessions[self.sessionid].action(base64)
             img_cache = self.sessions[self.sessionid].get_cache()
             length = len(img_cache["base64Array"])
-            if length < 2:
+            if img_cache['instruct'] == 'blend' and length < 2:
                 return Text(f"✏  请再发送一张或多张图片", e_context)
             else:
-                return Text(f"✏  您已发送{length}张图片，可以发送更多图片或者发送['{self.config['end_prefix'][0]}']开始合成", e_context)
+                return Text(f"✏  您已发送{length}张图片，可以发送更多图片或者发送['{self.config['end_prefix'][0]}']开始{names}操作", e_context)
 
     # 指令处理
     def handle_command(self, e_context: EventContext):
@@ -369,8 +370,16 @@ class MidJourney(Plugin):
                 if limit < 0:
                     return Error("[MJ] 数量不能小于0", e_context)
                 self.config["daily_limit"] = limit
+                for index, item in self.user_datas.items():
+                    self.user_datas[index]["limit"] = limit
+                write_pickle(self.user_datas_path, self.user_datas)
                 write_file(self.json_path, self.config)
                 return Info(f"[MJ] 每日使用次数已设置为{limit}次", e_context)
+            elif cmd == "r_limit":
+                for index, item in self.user_datas.items():
+                    self.user_datas[index]["limit"] = self.config["daily_limit"]
+                write_pickle(self.user_datas_path, self.user_datas)
+                return Info(f"[MJ] 所有用户每日使用次数已重置为{self.config['daily_limit']}次", e_context)
             elif cmd == "set_mj_admin_password":
                 if len(args) < 1:
                     return Error("[MJ] 请输入需要设置的密码", e_context)
@@ -828,9 +837,9 @@ class MidJourney(Plugin):
         else:
             return False, "[MJ] 认证失败"
 
-    def imagine(self, prompt, base64, e_context: EventContext):
-        logger.info("[MJ] /imagine prompt={} img={}".format(prompt, base64))
-        status, msg, id = self.mj.imagine(prompt, base64)
+    def imagine(self, prompt, base64Array, e_context: EventContext):
+        logger.info("[MJ] /imagine prompt={} imgList={}".format(prompt, base64Array))
+        status, msg, id = self.mj.imagine(prompt, base64Array)
         return self._reply(status, msg, id, e_context)
 
     def up(self, id, e_context: EventContext):
@@ -871,14 +880,21 @@ class MidJourney(Plugin):
             "group_id": msg.from_user_id if isgroup else "",
             "group_name": msg.from_user_nickname if isgroup else "",
         }
-        user_data = conf().get_user_data(uid)
+        logger.info("[MJ] user_datas={}".format(self.user_datas))
         # 判断是否是新的一天
-        if "mj_data" not in user_data or (user_data["mj_data"] and user_data["mj_data"]["time"] != current_date):
-            user_data["mj_data"] = {
+        if uid not in self.user_datas or "mj_data" not in self.user_datas[uid] or "mj_data" not in self.user_datas[uid] or self.user_datas[uid]["mj_data"]["time"] != current_date:
+            mj_data = {
                 "limit": self.config["daily_limit"],
                 "time": current_date
             }
-        limit = user_data["mj_data"]["limit"] if "mj_data" in user_data and "limit" in user_data["mj_data"] and user_data["mj_data"]["limit"] and user_data["mj_data"]["limit"] > 0 else False
+            if uid in self.user_datas and self.user_datas[uid]["mj_data"]:
+                self.user_datas[uid]["mj_data"] = mj_data
+            else:
+                self.user_datas[uid] = {
+                    "mj_data": mj_data
+                }
+            write_pickle(self.user_datas_path, self.user_datas)
+        limit = self.user_datas[uid]["mj_data"]["limit"] if "mj_data" in self.user_datas[uid] and "limit" in self.user_datas[uid]["mj_data"] and self.user_datas[uid]["mj_data"]["limit"] and self.user_datas[uid]["mj_data"]["limit"] > 0 else False
         userInfo['limit'] = limit
         userInfo['isadmin'] = uid in [user["user_id"] for user in mj_admin_users]
         userInfo['iswuser'] = uname in [user["user_nickname"] for user in users]
@@ -894,11 +910,11 @@ class MidJourney(Plugin):
 
     def _reply(self, status, msg, id, e_context: EventContext, reply_type="image"):
         userInfo = self.get_user_info(e_context)
-        user_data = conf().get_user_data(userInfo['user_id'])
         if status:
             if self.config["mj_tip"]:
                 send_reply(msg, e_context)
-            user_data["mj_data"]["limit"] -= 1
+            self.user_datas[userInfo['user_id']]["mj_data"]["limit"] -= 1
+            write_pickle(self.user_datas_path, self.user_datas)
             rc, rt = self.get_f_img(id, e_context, reply_type)
             return send(rc, e_context, rt)
         else:

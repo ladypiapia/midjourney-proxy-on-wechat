@@ -2,6 +2,8 @@
 
 最新版本号：`1.0.44`
 
+打个广告，我的MJ后端服务项目也先发了一个先行版[`midjourney-api`](https://github.com/mouxangithub/midjourney-api)，由于时间方面，目前暂时还不是很完善，部署那些教程脚本都还没写，后续完善些这个后端服务后，我会重新开设一个插件，喜欢的话可以关注下给个Star，你的Star就是我的动力
+
 使用代理 MidJourney 的discord频道[`midjourney-proxy`](https://github.com/novicezk/midjourney-proxy)的api在[`chatgpt-on-wechat`](https://github.com/zhayujie/chatgpt-on-wechat)进行请求绘图发送
 
 本插件依赖于[`chatgpt-on-wechat`](https://github.com/zhayujie/chatgpt-on-wechat)而开发的插件
@@ -28,6 +30,7 @@
 - [x] 聊天窗口管理员指令可增删改查白名单群组和白名单用户，从而限制用户使用，减少损耗
 - [x] 增加图片代理地址discordapp_proxy配置，解决图片本地国内无法发送的问题，可配置discordapp_proxy或配置chatgpt-on-wechat配置的proxy
 - [x] 新增每日图片上限，限制普通用户每日作图数，管理员和白名单用户不受限（daily_limit）
+- [x] 新增指令设置每日作图数数量和重置清空用户作图数
 
 ## 后续计划
 - [ ] 使用[midjourney-api](https://github.com/erictik/midjourney-api)重构项目的api服务
@@ -71,6 +74,7 @@
 - [x] $s_buser 用户ID或昵称: 设置黑名单用户
 - [x] $r_buser 用户ID或昵称或序列号: 移除黑名单用户
 - [x] $c_buser : 清空黑名单用户
+- [x] $s_limit : 设置每日作图数限制
 
 ## 一些问题说明以及解决方案
 ·超时问题：首先在discord输入/info查看你的`Fast Time Remaining`快速出图时间，然后我了解到有些朋友的是某宝某鱼上租的共享账号，这类账号的特点问题就是人多使用，加上上面的快速出图时间可能用完了，造成了你提交的作图一直在排队中，针对这类问题的解决方案如下：首先将midjourney-proxy更新到最新版，然后在他的配置项里面有一个`mj.queue.timeout-minutes`配置，即为任务超时时间，默认是五分钟，由于你的是多人使用的账号，所以次数可以延长些，改到十分钟甚至更长，具体自己试试，如果是专业版的话还可以修改`mj.queue.core-size`和`mj.queue.queue-size`并发数和等待队列长度，具体参考[`MidJourney订阅级别`](https://docs.midjourney.com/docs/plans)
@@ -101,7 +105,8 @@ Tips：部署midjourney-proxy后，下方mj_url不需要带/mj，只需域名/ip
     "blend_prefix": "[\"/b\"]", // 混图画图触发前缀
     "describe_prefix": "[\"/d\"]", // 图生文触发前缀
     "queue_prefix": "[\"/q\"]",  // 查询正在执行中任务触发前缀
-    "end_prefix": "[\"/e\"]"  // 结束存储打包发送任务（目前用于混图）触发前缀
+    "end_prefix": "[\"/e\"]",  // 结束存储打包发送任务（目前用于混图）触发前缀
+    "reroll_prefix": "[\"/r\"]"  // 重新绘制触发前缀
 }
 ```
 
@@ -151,7 +156,8 @@ Tips：部署midjourney-proxy后，下方mj_url不需要带/mj，只需域名/ip
     "blend_prefix": "[\"/b\"]", // 混图画图触发前缀
     "describe_prefix": "[\"/d\"]", // 图生文触发前缀
     "queue_prefix": "[\"/q\"]",  // 查询正在执行中任务触发前缀
-    "end_prefix": "[\"/e\"]"  // 结束存储打包发送任务（目前用于混图）触发前缀
+    "end_prefix": "[\"/e\"]",  // 结束存储打包发送任务（目前用于混图）触发前缀
+    "reroll_prefix": "[\"/r\"]"  // 重新绘制触发前缀
 }
 ## 第四步：#scanp扫描插件，提示发现MidJourney插件即为成功
 #scanp
@@ -176,6 +182,7 @@ blend_prefix="[\"/b\", \"/blend\"]"
 describe_prefix="[\"/d\", \"/describe\"]"
 queue_prefix="[\"/q\"]"
 end_prefix="[\"/e\"]"
+reroll_prefix="[\"/r\"]"
 ## 第二步：重新部署redeploy
 ## 第三步：扫码登录进入聊天窗口，先认证管理员，如果是临时密码，请重启chatgpt-on-wechat前往logs查看，上方日志中有临时密码
 #auth＋密码
@@ -188,4 +195,6 @@ end_prefix="[\"/e\"]"
 
 详细教程在[`插件文档`](https://github.com/zhayujie/chatgpt-on-wechat/tree/master/plugins#readme)和[`midjourney-proxy`](https://github.com/novicezk/midjourney-proxy)有说明
 
-![Star History Chart](https://api.star-history.com/svg?repos=mouxangithub/midjourney&type=Date)
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=mouxangithub/midjourney-proxy-on-wechat&type=Date)](https://star-history.com/#mouxangithub/midjourney-proxy-on-wechat&Date)
