@@ -32,15 +32,15 @@ class _mjApi:
     def subTip(self, res):
         rj = res.json()
         if not rj:
-            return False, "❌ MJ服务异常", ""
+            return False, "❌ Midjourney服务异常", ""
         code = rj["code"]
         id = rj['result']
         if code == 1:
             msg = "✅ 您的任务已提交\n"
-            msg += f"🚀 正在快速处理中，请稍后\n"
+            msg += f"🚀 正在快速作图中，请稍后\n"
             msg += f"📨 ID: {id}\n"
-            msg += f"✍️ 使用[{self.fetch_prefix[0]} + 任务ID操作]\n"
-            msg += f"✍️ {self.fetch_prefix[0]} {id}"
+            msg += f"✍️ 使用[@bot {self.fetch_prefix[0]} {id}]查询进度\n"
+            # msg += f"✍️ {self.fetch_prefix[0]} {id}"
             return True, msg, rj["result"]
         else:
             return False, rj['description'], ""
@@ -142,17 +142,17 @@ class _mjApi:
             imageUrl = ""
             timeup = 0
             if rj['startTime']:
-                startTime = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(rj['startTime']/1000))
+                startTime = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime((rj['startTime']+ 8*3600)/1000))
             if rj['finishTime']:
-                finishTime = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(rj['finishTime']/1000))
-                timeup = (rj['finishTime'] - rj['startTime'])/1000
+                finishTime = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime((rj['finishTime']+ 8*3600)/1000))
+                timeup = (rj['finishTime'] - rj['startTime'])/1000/60
             msg = "✅ 查询成功\n"
             msg += f"-----------------------------\n"
             msg += f"📨 ID: {rj['id']}\n"
             msg += f"🚀 进度：{rj['progress']}\n"
             msg += f"⌛ 状态：{self.status(status)}\n"
             if rj['finishTime']:
-                msg += f"⏱ 耗时：{timeup}秒\n"
+                msg += f"⏱ 耗时：{timeup}分钟\n"
             if rj["action"] == "DESCRIBE":
                 msg += f"✨ 描述：{rj['prompt']}\n"
             else:
@@ -163,7 +163,7 @@ class _mjApi:
                 msg += f"❌ 失败原因：{rj['failReason']}\n"
             if rj['imageUrl']:
                 imageUrl = self.get_img_url(rj['imageUrl'])
-                msg += f"🎬 图片地址: {imageUrl}\n"
+                msg += f"🎬 原图地址: {imageUrl}\n"
             if startTime:
                 msg += f"⏱ 开始时间：{startTime}\n"
             if finishTime:
@@ -199,7 +199,7 @@ class _mjApi:
                     ruser = json.loads(rj['state'])
                 msg += f"-----------------------------\n"
                 if rj['finishTime']:
-                    timeup = (rj['finishTime'] - rj['startTime'])/1000
+                    timeup = (rj['finishTime'] - rj['startTime'])/1000/60
                 if action == "IMAGINE":
                     msg += f"🎨 绘图成功\n"
                 elif  action == "UPSCALE":
@@ -218,20 +218,20 @@ class _mjApi:
                 else:
                     msg += f"✨ 描述：{rj['description']}\n"
                 if rj['finishTime']:
-                    msg += f"⏱ 耗时：{timeup}秒\n"
+                    msg += f"⏱ 耗时：{timeup}分钟\n"
                 if action == "IMAGINE" or action == "BLEND" or action == "REROLL":
                     msg += f"🪄 放大 U1～U4，变换 V1～V4：使用[{self.up_prefix[0]} + 任务ID]\n"
                     msg += f"✍️ 例如：{self.up_prefix[0]} {id} U1\n"
                 if ruser and ruser["user_nickname"]:
-                    msg += f"🙋‍♂️ 提交人：{ruser['user_nickname']}\n"
+                    msg += f"🙋‍♂️ 提交人：@{ruser['user_nickname']}\n"
                 if rj['imageUrl']:
                     imageUrl = self.get_img_url(rj['imageUrl'])
-                    msg += f"🎬 图片地址: {imageUrl}\n"
+                    msg += f"🎬 原图地址: {imageUrl}\n"
                 if rj['startTime']:
-                    startTime = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(rj['startTime']/1000))
+                    startTime = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime((rj['startTime']+ 8*3600)/1000))
                     msg += f"⏱ 开始时间：{startTime}\n"
                 if rj['finishTime']:
-                    finishTime = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(rj['finishTime']/1000))
+                    finishTime = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime((rj['finishTime']+ 8*3600)/1000))
                     msg += f"⏱ 完成时间：{finishTime}\n"
                 msg += f"-----------------------------"
                 return True, msg, imageUrl
@@ -273,10 +273,10 @@ class _mjApi:
                         msg += f"❌ 失败原因：{rj[i]['failReason']}\n"
                     if rj[i]['imageUrl']:
                         imageUrl = self.get_img_url(rj[i]['imageUrl'])
-                        msg += f"🎬 图片地址: {imageUrl}\n"
+                        msg += f"🎬 原图地址: {imageUrl}\n"
                     startTime = ""
                     if rj[i]['startTime']:
-                        startTime = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(rj[i]['startTime']/1000))
+                        startTime = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime((rj[i]['startTime']+ 8*3600)/1000))
                     if startTime:
                         msg += f"⏱开始时间：{startTime}\n"
             msg += f"-----------------------------\n"
@@ -306,7 +306,7 @@ class _mjApi:
         return image_url
 
     def help_text(self):
-        help_text = "欢迎使用MJ绘画机器人\n"
+        help_text = "欢迎使用Midjourney绘画机器人\n"
         help_text += f"这是一个AI绘画工具,只要输入想到的文字,通过人工智能产出相对应的图.\n"
         help_text += f"-----------------------------\n"
         help_text += f"🎨 插件使用说明:\n"
