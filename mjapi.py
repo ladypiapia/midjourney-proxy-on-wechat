@@ -39,7 +39,7 @@ class _mjApi:
             msg = "✅ 您的任务已提交\n"
             msg += f"🚀 正在快速作图中，请稍后\n"
             msg += f"📨 ID: {id}\n"
-            msg += f"✍️ 使用[@bot {self.fetch_prefix[0]} {id}]查询进度\n"
+            msg += f"✍️ 使用[@bot {self.fetch_prefix[0]} ID]查询进度\n"
             # msg += f"✍️ {self.fetch_prefix[0]} {id}"
             return True, msg, rj["result"]
         else:
@@ -142,10 +142,10 @@ class _mjApi:
             imageUrl = ""
             timeup = 0
             if rj['startTime']:
-                startTime = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime((rj['startTime']+ 8*3600)/1000))
+                startTime = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime((rj['startTime']+8*3600)/1000))
             if rj['finishTime']:
-                finishTime = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime((rj['finishTime']+ 8*3600)/1000))
-                timeup = (rj['finishTime'] - rj['startTime'])/1000/60
+                finishTime = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime((rj['finishTime']+8*3600)/1000))
+                timeup = round((rj['finishTime'] - rj['startTime'])/1000/60,2)
             msg = "✅ 查询成功\n"
             msg += f"-----------------------------\n"
             msg += f"📨 ID: {rj['id']}\n"
