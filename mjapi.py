@@ -301,8 +301,16 @@ class _mjApi:
         return msg
 
     def get_img_url(self, image_url):
+        headers = {
+            'Authorization': 'Bearer 557c6724c43bd92d1d94d0c249193030cd2e8e08',
+            'Content-Type': 'application/json',
+        }
         if self.proxy and image_url.startswith("https://cdn.discordapp.com"):
             image_url = image_url.replace("https://cdn.discordapp.com", self.proxy)
+            data = f'{{ "long_url": "{image_url}" , "domain": "bit.ly" }}'
+            response = requests.post('https://api-ssl.bitly.com/v4/shorten', headers=headers, data=data)
+            jd = json.loads(response.text)
+            image_url = jd['link']
         return image_url
 
     def help_text(self):
@@ -339,3 +347,4 @@ class _mjApi:
         help_text += f"-----------------------------\n"
         help_text += f"其他参数可前往文档查看:https://docs.midjourney.com/docs/parameter-list"
         return help_text
+   
