@@ -200,7 +200,7 @@ class _mjApi:
                     ruser = json.loads(rj['state'])
                 msg += f"-----------------------------\n"
                 if rj['finishTime']:
-                    timeup = (rj['finishTime'] - rj['startTime'])/1000/60
+                    timeup = round((rj['finishTime'] - rj['startTime'])/1000/60,2)
                 if action == "IMAGINE":
                     msg += f"🎨 绘图成功\n"
                 elif  action == "UPSCALE":
@@ -307,16 +307,21 @@ class _mjApi:
         if self.proxy and image_url.startswith("https://cdn.discordapp.com"):
             image_url = image_url.replace("https://cdn.discordapp.com", self.proxy)
         return image_url
-        
+
     def shorten_url(self, image_url):
-        headers = {
-            'Authorization': 'Bearer 557c6724c43bd92d1d94d0c249193030cd2e8e08',
-            'Content-Type': 'application/json',}
-        data = f'{{ "long_url": "{image_url}" , "domain": "bit.ly" }}'
-        response = requests.post('https://api-ssl.bitly.com/v4/shorten', headers=headers, data=data)
-        jd = json.loads(response.text)
-        image_url = jd['link']
-        return image_url
+        try:
+            headers = {
+                'Authorization': 'Bearer 557c6724c43bd92d1d94d0c249193030cd2e8e08',
+                'Content-Type': 'application/json',
+            }
+            data = json.dumps({"long_url": image_url, "domain": "bit.ly"})
+            response = requests.post('https://api-ssl.bitly.com/v4/shorten', headers=headers, data=data)
+            response.raise_for_status()  # 这将抛出一个异常，如果HTTP请求返回了一个4xx或5xx响应
+            jd = response.json()
+            return jd['link']
+        except requests.RequestException as e:
+            print(f"An error occurred: {e}")
+            return image_url  # 返回原始URL或者处理错误的其他方式
         
 
     def help_text(self):
