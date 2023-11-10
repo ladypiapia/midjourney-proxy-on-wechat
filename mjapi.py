@@ -310,15 +310,16 @@ class _mjApi:
 
     def shorten_url(self, image_url):
         try:
-            headers = {
-                'Authorization': 'Bearer 557c6724c43bd92d1d94d0c249193030cd2e8e08',
-                'Content-Type': 'application/json',
-            }
-            data = json.dumps({"long_url": image_url, "domain": "bit.ly"})
-            response = requests.post('https://api-ssl.bitly.com/v4/shorten', headers=headers, data=data)
+            json_data = {
+                    'url': image_url,
+                    'key': '',
+                    'hash': '59b65b53e589f16a97cb00c15caeb2a2',
+                }
+            response = requests.post('https://t.oneamaze.vip/', json=json_data)
             response.raise_for_status()  # 这将抛出一个异常，如果HTTP请求返回了一个4xx或5xx响应
-            jd = response.json()
-            return jd['link']
+            key = response.json()['key']
+            image_url = 'https://t.oneamaze.vip'+key
+            return image_url
         except requests.RequestException as e:
             print(f"An error occurred: {e}")
             return image_url  # 返回原始URL或者处理错误的其他方式
