@@ -307,10 +307,10 @@ class _mjApi:
         }
         if self.proxy and image_url.startswith("https://cdn.discordapp.com"):
             image_url = image_url.replace("https://cdn.discordapp.com", self.proxy)
-            data = f'{{ "long_url": "{image_url}" , "domain": "bit.ly" }}'
-            response = requests.post('https://api-ssl.bitly.com/v4/shorten', headers=headers, data=data)
-            jd = json.loads(response.text)
-            image_url = jd['link']
+        data = f'{{ "long_url": "{image_url}" , "domain": "bit.ly" }}'
+        response = requests.post('https://api-ssl.bitly.com/v4/shorten', headers=headers, data=data)
+        jd = json.loads(response.text)
+        image_url = jd['link']
         return image_url
 
     def help_text(self):
