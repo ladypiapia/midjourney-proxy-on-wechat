@@ -163,6 +163,7 @@ class _mjApi:
                 msg += f"❌ 失败原因：{rj['failReason']}\n"
             if rj['imageUrl']:
                 imageUrl = self.get_img_url(rj['imageUrl'])
+                imageUrl = self.shorten_url(imageUrl)
                 msg += f"🎬 原图地址: {imageUrl}\n"
             if startTime:
                 msg += f"⏱ 开始时间：{startTime}\n"
@@ -226,6 +227,7 @@ class _mjApi:
                     msg += f"🙋‍♂️ 提交人：@{ruser['user_nickname']}\n"
                 if rj['imageUrl']:
                     imageUrl = self.get_img_url(rj['imageUrl'])
+                    imageUrl = self.shorten_url(imageUrl)
                     msg += f"🎬 原图地址: {imageUrl}\n"
                 if rj['startTime']:
                     startTime = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime((rj['startTime']+ 8*3600)/1000))
@@ -273,6 +275,7 @@ class _mjApi:
                         msg += f"❌ 失败原因：{rj[i]['failReason']}\n"
                     if rj[i]['imageUrl']:
                         imageUrl = self.get_img_url(rj[i]['imageUrl'])
+                        imageUrl = self.shorten_url(imageUrl)
                         msg += f"🎬 原图地址: {imageUrl}\n"
                     startTime = ""
                     if rj[i]['startTime']:
@@ -301,17 +304,20 @@ class _mjApi:
         return msg
 
     def get_img_url(self, image_url):
-        headers = {
-            'Authorization': 'Bearer 557c6724c43bd92d1d94d0c249193030cd2e8e08',
-            'Content-Type': 'application/json',
-        }
         if self.proxy and image_url.startswith("https://cdn.discordapp.com"):
             image_url = image_url.replace("https://cdn.discordapp.com", self.proxy)
+        return image_url
+        
+    def shorten_url(self, image_url):
+        headers = {
+            'Authorization': 'Bearer 557c6724c43bd92d1d94d0c249193030cd2e8e08',
+            'Content-Type': 'application/json',}
         data = f'{{ "long_url": "{image_url}" , "domain": "bit.ly" }}'
         response = requests.post('https://api-ssl.bitly.com/v4/shorten', headers=headers, data=data)
         jd = json.loads(response.text)
         image_url = jd['link']
         return image_url
+        
 
     def help_text(self):
         help_text = "欢迎使用Midjourney绘画机器人\n"
