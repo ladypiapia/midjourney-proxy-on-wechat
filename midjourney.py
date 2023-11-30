@@ -898,8 +898,8 @@ class MidJourney(Plugin):
         limit = self.user_datas[uid]["mj_data"]["limit"] if "mj_data" in self.user_datas[uid] and "limit" in self.user_datas[uid]["mj_data"] and self.user_datas[uid]["mj_data"]["limit"] and self.user_datas[uid]["mj_data"]["limit"] > 0 else False
         userInfo['limit'] = limit
         userInfo['isadmin'] = uid in [user["user_id"] for user in mj_admin_users]
-        userInfo['iswuser'] = uname in [user["user_nickname"] for user in users]
-        userInfo['isbuser'] = uname in [user["user_nickname"] for user in busers]
+        userInfo['iswuser'] = uname in [user["user_nickname"] for user in users if isinstance(user, dict) and "user_nickname" in user]
+        userInfo['isbuser'] = uname in [user["user_nickname"] for user in busers if isinstance(user, dict) and "user_nickname" in user]
         userInfo['iswgroup'] = userInfo["group_name"] in groups
         userInfo['isbgroup'] = userInfo["group_name"] in bgroups
         return userInfo
