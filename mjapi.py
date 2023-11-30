@@ -337,7 +337,7 @@ class _mjApi:
         help_text += f"(5) blend混图:发送['{self.blend_prefix[0]}']指令，然后发送多张图片最后发送['{self.end_prefix[0]}']进行混合（此方法不限群聊还是私聊方式）\n"
         help_text += f"(6) 任务查询:使用['{self.fetch_prefix[0]} + 任务ID操作']即可查询所提交的任务\n"
         help_text += f"(7) 任务队列:使用['{self.queue_prefix[0]}']即可查询正在执行中的任务队列\n"
-        help_text += f"(8) reroll重新生成:使用['{self.reroll_prefix[0]}' + 任务ID操作]即可重新绘制图片\n"
+        help_text += f"(8) reroll重新生成:使用['/r + 任务ID操作']即可重新绘制图片\n"
         help_text += f"-----------------------------\n"
         help_text += f"📕 prompt附加参数 \n"
         help_text += f"1.解释: 在prompt后携带的参数, 可以使你的绘画更别具一格\n"
